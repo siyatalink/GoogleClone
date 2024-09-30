@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_clone/services/search_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -22,6 +23,19 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error launching URL: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           Image.asset(
-            'assets/google_logo.png', // Ensure you have this image in your assets folder
+            'assets/google_logo.png',
             height: 100,
             width: 100,
           ),
@@ -57,7 +71,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          // Only display the icons if there are no results
           if (_results.isEmpty)
             Padding(
               padding: const EdgeInsets.all(5),
@@ -83,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-          const SizedBox(height: 20), // Add some space before the results
+          const SizedBox(height: 20),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -93,26 +106,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_results.isNotEmpty) {
                     final item = _results[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 8.0), // Margin between cards
-                      elevation: 4, // Shadow effect
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      elevation: 4,
                       child: ListTile(
-                        contentPadding: const EdgeInsets.all(
-                            16.0), // Padding inside the ListTile
+                        contentPadding: const EdgeInsets.all(16.0),
                         title: Text(
                           item['title'],
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold), // Bold title
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(item['snippet']),
                         onTap: () {
-                          // Open the URL in the browser
-                          // Use a package like url_launcher to launch URLs
+                          final url = item['link'];
+                          if (url != null && url.isNotEmpty) {
+                            _launchUrl(url);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Invalid URL')),
+                            );
+                          }
                         },
                       ),
                     );
                   } else {
-                    // Display a message if there are no results
                     return Container(
                       padding: const EdgeInsets.all(16),
                       child: const Text('No results to show'),
